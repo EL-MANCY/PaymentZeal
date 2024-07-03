@@ -8,8 +8,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.setFragmentResultListener
 import androidx.navigation.fragment.findNavController
+import com.google.gson.Gson
 import com.zeal.paymentassignment.R
 import com.zeal.paymentassignment.core.FlowDataObject
 import com.zeal.paymentassignment.databinding.FragmentEnterAmount2Binding
@@ -40,11 +40,13 @@ class EnterAmountDataFragment : Fragment() {
                     } else {
                         FlowDataObject.getInstance().amount = amountF
 
+                        val flowDataJson = FlowDataObject.toJson()
+
                         val intent = Intent().apply {
                             action = Intent.ACTION_SEND
                             `package` = "com.example.bank"
-                            putExtra(Intent.EXTRA_TEXT, amountF.toString())
-                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, flowDataJson)
+                            type = "application/json"
                         }
 
                         if (intent.resolveActivity(requireActivity().packageManager) != null) {
@@ -67,13 +69,18 @@ class EnterAmountDataFragment : Fragment() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE && resultCode == AppCompatActivity.RESULT_OK) {
             data?.getStringExtra(Intent.EXTRA_TEXT)?.let {
-                val processedAmount = it.toFloat()
-                Toast.makeText(context, "Amount After Discount: $processedAmount", Toast.LENGTH_SHORT)
-                    .show()
-                FlowDataObject.getInstance().amount = it.toFloat()
+                val receivedObject = Gson().fromJson(it, FlowDataObject::class.java)
+                Toast.makeText(
+                    context,
+                    "Amount After Discount: ${receivedObject.amount}",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                FlowDataObject.getInstance().amount = receivedObject.amount
                 findNavController().navigate(R.id.action_enterAmountDataFragment_to_swipeCardFragment)
             }
         }
+
     }
 
     companion object {
